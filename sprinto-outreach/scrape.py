@@ -57,16 +57,23 @@ def fetch_once(domain, path="home"):
         return "", status
 
 
-def fetch(domain, path="home"):
-    """Return cleaned page text, retrying transient failures up to
-    config.MAX_FETCH_RETRIES attempts with backoff. Returns "" on failure."""
+def fetch_with_status(domain, path="home"):
+    """Like fetch() but also returns the final status (OK, TRANSIENT or
+    PERMANENT) so callers can tell 'scrape failed' from 'page empty'."""
+    status = PERMANENT
     for attempt in range(1, config.MAX_FETCH_RETRIES + 1):
         text, status = fetch_once(domain, path)
         if status != TRANSIENT:
-            return text
+            return text, status
         if attempt < config.MAX_FETCH_RETRIES:
             backoff(attempt)
-    return ""
+    return "", status
+
+
+def fetch(domain, path="home"):
+    """Return cleaned page text, retrying transient failures up to
+    config.MAX_FETCH_RETRIES attempts with backoff. Returns "" on failure."""
+    return fetch_with_status(domain, path)[0]
 
 
 class _Text(HTMLParser):

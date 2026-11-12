@@ -136,7 +136,7 @@ class EndToEnd(unittest.TestCase):
         for d in ("brickbox.example", "orbitdocs.example"):
             self.assertFalse(by[d]["qualified"], d)
             self.assertFalse(Path(f"outbox/{d}.txt").exists())
-        self.assertEqual(by["ghostco.example"]["reason"], "no data")
+        self.assertEqual(by["ghostco.example"]["reason"], "no data: page unavailable")
         self.assertEqual(sorted(os.listdir("outbox")),
                          ["cartwheel.example.txt", "finlytic.example.txt", "zenstack.example.txt"])
         self.assertIn(config.TO_ADDRESS, Path("outbox/finlytic.example.txt").read_text())
@@ -162,7 +162,7 @@ class EndToEnd(unittest.TestCase):
 
     def test_qualified_but_no_contact_is_reported_not_sent(self):
         company = {"company": "X", "compliance_signals": []}
-        with mock.patch.object(scrape, "fetch", lambda d, p="home": "text"), \
+        with mock.patch.object(scrape, "fetch_with_status", lambda d, p="home": ("text", scrape.OK)), \
              mock.patch.object(run.extract, "extract", lambda d, t: company), \
              mock.patch.object(llm, "ask", reply(95)):
             row = run.process("nocontact.example", "data/contacts.csv")

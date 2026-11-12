@@ -81,7 +81,8 @@ class BadFollowUp(unittest.TestCase):
             r = self.run_q(followup)
             self.assertEqual(r["score"], 85, followup)
             self.assertTrue(r["qualified"], followup)
-            self.assertEqual(r["reason"], "strong fit", followup)
+            self.assertTrue(r["reason"].startswith("strong fit"), followup)
+            self.assertTrue(r["incomplete"], followup)
 
     def test_error_is_recorded_for_the_log(self):
         r = self.run_q(json.JSONDecodeError("bad json", "", 0))
@@ -101,7 +102,7 @@ class BadFollowUp(unittest.TestCase):
 
     def test_followup_error_reaches_the_run_log_row(self):
         company = {"company": "X", "compliance_signals": []}
-        with mock.patch.object(scrape, "fetch", lambda d, p="home": "text"), \
+        with mock.patch.object(scrape, "fetch_with_status", lambda d, p="home": ("text", scrape.OK)), \
              mock.patch.object(run.extract, "extract", lambda d, t: company), \
              mock.patch.object(run.qualify, "qualify", lambda d, c: {
                  "score": 85, "qualified": True, "reason": "r", "followup_error": "ValueError: x"}), \

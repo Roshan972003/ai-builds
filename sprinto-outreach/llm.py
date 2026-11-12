@@ -19,7 +19,7 @@ def ask(step, domain, prompt):
     resp = client.models.generate_content(
         model=config.MODEL,
         contents=prompt,
-        config={"temperature": config.TEMPERATURE},
+        config={"temperature": config.TEMPERATURES.get(step, config.TEMPERATURE)},
     )
     return json.loads(_strip_fences(resp.text))
 

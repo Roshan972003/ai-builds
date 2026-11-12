@@ -40,11 +40,16 @@ def already_sent():
 
 
 def process(d, contacts_path):
-    text = scrape.fetch(d)
+    text, status = scrape.fetch_with_status(d)
     company = extract.extract(d, text) if text else {}
-    q = qualify.qualify(d, company) if company else {"score": 0, "qualified": False, "reason": "no data"}
+    if company:
+        q = qualify.qualify(d, company)
+    else:
+        why = {scrape.TRANSIENT: "scrape failed after retries", scrape.PERMANENT: "page unavailable"}.get(
+            status, "empty page" if not text else "extraction returned nothing")
+        q = {"score": 0, "qualified": False, "reason": f"no data: {why}"}
     row = {"domain": d, "score": q["score"], "qualified": q["qualified"], "reason": q["reason"]}
-    for key in ("scrape_failed", "followup_error"):
+    for key in ("scrape_failed", "followup_error", "incomplete"):
         if q.get(key):
             row[key] = q[key]
     if q["qualified"]:

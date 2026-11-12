@@ -84,7 +84,7 @@ class QualifyScrapeRetry(unittest.TestCase):
 
     def test_scrape_failures_reach_the_run_log_row(self):
         company = {"company": "X", "compliance_signals": []}
-        with mock.patch.object(scrape, "fetch", lambda d, p="home": "text"), \
+        with mock.patch.object(scrape, "fetch_with_status", lambda d, p="home": ("text", scrape.OK)), \
              mock.patch.object(run.extract, "extract", lambda d, t: company), \
              mock.patch.object(run.qualify, "qualify",
                                lambda d, c: {"score": 40, "qualified": False, "reason": "r", "scrape_failed": ["about"]}):
