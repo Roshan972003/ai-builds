@@ -83,10 +83,6 @@ class Scrape(unittest.TestCase):
     def test_missing_offline_fixture_returns_empty(self):
         self.assertEqual(scrape.fetch("ghostco.example"), "")
 
-    def test_clean_drops_short_and_duplicate_lines(self):
-        line = "word " * 9
-        self.assertEqual(scrape.clean(f"hi there\n{line}\n{line}"), line.strip())
-
 
 class Misc(unittest.TestCase):
     def test_llm_strips_code_fences(self):

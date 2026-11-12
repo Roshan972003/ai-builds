@@ -19,7 +19,7 @@ def parse_domains(text):
     """One domain per line; blank lines and # comments are ignored."""
     out = []
     for line in text.splitlines():
-        line = line.split("#", 1)[0].strip().lower()
+        line = scrape.normalize_domain(line.split("#", 1)[0])
         if line and line not in out:
             out.append(line)
     return out
