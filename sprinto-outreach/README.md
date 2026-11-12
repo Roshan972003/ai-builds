@@ -12,3 +12,13 @@ python run.py               # reads data/domains.txt, writes outbox/ and runs/ru
 
 OFFLINE=1 reads cached pages from fixtures/pages and canned model replies from
 fixtures/llm_responses.json. No network, no cost. Company names are fictional.
+
+## Tests
+
+```
+python -m unittest discover -s tests -v    # offline, no keys, runs in a temp dir
+```
+
+`run.py` logs each domain as it finishes. A failure on one domain is recorded
+(`"error"` in `runs/run_log.jsonl`) and the rest still run; the exit code is 1 if
+any failed. Domains already emailed (`"send": "sent"`) are skipped on re-runs.

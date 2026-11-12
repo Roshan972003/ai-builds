@@ -9,7 +9,10 @@ def ask(step, domain, prompt):
     """Return the model's JSON reply as a dict."""
     if config.OFFLINE:
         canned = json.loads(_CANNED.read_text())
-        return canned[step][domain]
+        try:
+            return canned[step][domain]
+        except KeyError:
+            raise LookupError(f"no canned reply for step={step!r} domain={domain!r}") from None
 
     from google import genai
     client = genai.Client(api_key=config.API_KEY)
@@ -18,4 +21,13 @@ def ask(step, domain, prompt):
         contents=prompt,
         config={"temperature": config.TEMPERATURE},
     )
-    return json.loads(resp.text)
+    return json.loads(_strip_fences(resp.text))
+
+
+def _strip_fences(text):
+    """Models often wrap JSON in ```json fences; remove them."""
+    t = text.strip()
+    if t.startswith("```"):
+        t = t.split("\n", 1)[1] if "\n" in t else ""
+        t = t.rsplit("```", 1)[0]
+    return t.strip()
