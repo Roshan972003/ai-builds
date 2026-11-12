@@ -13,11 +13,14 @@ COMPANY: {company}"""
 
 def qualify(domain, company):
     result = llm.ask("qualify", domain, PROMPT.format(company=company))
-    rounds = 0
-    while result["needs_more"] and rounds < config.MAX_ROUNDS:
-        more = scrape.fetch(domain, "about")
+    pages = config.EXTRA_PAGES[:config.MAX_ROUNDS]
+    for page in pages:
+        if not result["needs_more"]:
+            break
+        more = scrape.fetch(domain, page)
+        if not more:
+            continue  # page unavailable after retries; try the next one
         company = {**company, **extract.extract(domain, more)}
         result = llm.ask("qualify_more", domain, PROMPT.format(company=company))
-        rounds += 1
     result["qualified"] = result["score"] >= config.QUALIFY_THRESHOLD
     return result
