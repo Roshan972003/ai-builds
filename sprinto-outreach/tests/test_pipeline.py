@@ -42,7 +42,7 @@ class Qualify(unittest.TestCase):
     def test_each_retry_round_fetches_a_new_page_and_is_capped(self):
         pages = []
         with mock.patch.object(llm, "ask", reply(50, needs_more=True)), \
-             mock.patch.object(scrape, "fetch", lambda d, p: pages.append(p) or "text"), \
+             mock.patch.object(scrape, "fetch_once", lambda d, p: (pages.append(p) or "text", scrape.OK)), \
              mock.patch.object(qualify.extract, "extract", lambda d, t: {}):
             r = qualify.qualify("x", {})
         self.assertEqual(pages, config.EXTRA_PAGES[:config.MAX_ROUNDS])
@@ -55,7 +55,7 @@ class Qualify(unittest.TestCase):
                 return {"score": 50, "reason": "r", "needs_more": True}
             raise LookupError("no fixture")
         with mock.patch.object(llm, "ask", ask), \
-             mock.patch.object(scrape, "fetch", lambda d, p: "text"), \
+             mock.patch.object(scrape, "fetch_once", lambda d, p: ("text", scrape.OK)), \
              mock.patch.object(qualify.extract, "extract", lambda d, t: {}):
             self.assertEqual(qualify.qualify("x", {})["score"], 50)
 

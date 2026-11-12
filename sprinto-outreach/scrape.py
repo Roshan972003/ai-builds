@@ -29,31 +29,43 @@ def _retryable(exc):
     return resp.status_code >= 500 or resp.status_code in RETRY_STATUS
 
 
-def fetch(domain, path="home"):
-    """Return cleaned page text for a domain (home or about page).
+OK, TRANSIENT, PERMANENT = "ok", "transient", "permanent"
 
-    Timeouts, connection errors, 5xx and 408/425/429 are retried up to
-    config.MAX_FETCH_RETRIES attempts with backoff; other 4xx (404, 403...)
-    fail immediately. Failures are logged and return "".
-    """
+
+def backoff(attempt):
+    """Sleep before retry number `attempt` (1-based): 1s, 2s, 4s..."""
+    time.sleep(2 ** (attempt - 1))
+
+
+def fetch_once(domain, path="home"):
+    """One attempt, no retries. Returns (text, status) where status is
+    OK, TRANSIENT (timeout/connection/5xx/408/425/429: worth retrying) or
+    PERMANENT (404, 403, missing fixture...: retrying will not help)."""
     domain = normalize_domain(domain)
     if config.OFFLINE:
         f = PAGES / f"{domain}_{path}.txt"
-        return f.read_text() if f.exists() else ""
+        return (f.read_text(), OK) if f.exists() else ("", PERMANENT)
 
     url = f"https://{domain}/" + ("" if path == "home" else path)
+    try:
+        resp = requests.get(url, timeout=10, headers=HEADERS)
+        resp.raise_for_status()
+        return clean(resp.text), OK
+    except requests.RequestException as e:
+        status = TRANSIENT if _retryable(e) else PERMANENT
+        print(f"scrape: {url} failed ({status}): {e}")
+        return "", status
+
+
+def fetch(domain, path="home"):
+    """Return cleaned page text, retrying transient failures up to
+    config.MAX_FETCH_RETRIES attempts with backoff. Returns "" on failure."""
     for attempt in range(1, config.MAX_FETCH_RETRIES + 1):
-        try:
-            resp = requests.get(url, timeout=10, headers=HEADERS)
-            resp.raise_for_status()
-            return clean(resp.text)
-        except requests.RequestException as e:
-            retry = _retryable(e) and attempt < config.MAX_FETCH_RETRIES
-            print(f"scrape: {url} attempt {attempt}/{config.MAX_FETCH_RETRIES} failed: {e}"
-                  + ("" if retry else " (giving up)"))
-            if not retry:
-                return ""
-            time.sleep(2 ** (attempt - 1))
+        text, status = fetch_once(domain, path)
+        if status != TRANSIENT:
+            return text
+        if attempt < config.MAX_FETCH_RETRIES:
+            backoff(attempt)
     return ""
 
 

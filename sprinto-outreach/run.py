@@ -44,6 +44,9 @@ def process(d, contacts_path):
     company = extract.extract(d, text) if text else {}
     q = qualify.qualify(d, company) if company else {"score": 0, "qualified": False, "reason": "no data"}
     row = {"domain": d, "score": q["score"], "qualified": q["qualified"], "reason": q["reason"]}
+    for key in ("scrape_failed", "followup_error"):
+        if q.get(key):
+            row[key] = q[key]
     if q["qualified"]:
         contact = contacts.find_contact(d, contacts_path)
         if contact:
