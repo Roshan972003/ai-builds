@@ -5,7 +5,9 @@ from pathlib import Path
 def load(path="data/applications.csv"):
     apps = []
     with open(path, newline="") as f:
-        for row in csv.DictReader(f):
+        reader = csv.DictReader(f)
+        reader.fieldnames = [h.strip() for h in reader.fieldnames]
+        for row in reader:
             apps.append({
                 "id": row["id"],
                 "name": row["name"],

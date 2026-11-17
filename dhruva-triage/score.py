@@ -3,11 +3,13 @@ POINTS = {"match": 1, "partial": 0.5, "no-match": 0}
 
 def raw_score(verdicts):
     """Sum of points across the six criteria, 0 to 6."""
-    return sum(POINTS.get(v["verdict"], 1) for v in verdicts.values())
+    return sum(POINTS.get(v["verdict"], 0) for v in verdicts.values())
 
 
 def missing(verdicts):
-    return [c for c, v in verdicts.items() if v["verdict"] == "insufficient-data"]
+    import config
+    return [c for c in config.CRITERIA
+            if c not in verdicts or verdicts[c]["verdict"] == "insufficient-data"]
 
 
 def recommend(fit, n_missing, term):
