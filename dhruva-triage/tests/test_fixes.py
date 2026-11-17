@@ -37,6 +37,28 @@ class ScoreTests(unittest.TestCase):
         self.assertTrue(score.recommend(9, 0, "crypto").startswith("PASS (anti-thesis"))
 
 
+class NormaliseTests(unittest.TestCase):
+    def test_garbage_reply_is_all_missing(self):
+        for bad in ({}, {"criteria": None}, "oops", {"criteria": []}):
+            out = score.normalise(bad)
+            self.assertEqual(score.missing(out), config.CRITERIA)
+
+    def test_case_and_unknown_verdicts(self):
+        r = {"criteria": {"stage": {"verdict": "Match", "citation": "form"},
+                          "sector": {"verdict": "great", "citation": "form"}}}
+        out = score.normalise(r)
+        self.assertEqual(out["stage"]["verdict"], "match")
+        self.assertEqual(out["sector"]["verdict"], "insufficient-data")
+
+    def test_match_without_citation_is_downgraded(self):
+        r = {"criteria": {"stage": {"verdict": "match", "citation": ""}}}
+        self.assertEqual(score.normalise(r)["stage"]["verdict"], "insufficient-data")
+
+    def test_no_match_without_citation_kept(self):
+        r = {"criteria": {"stage": {"verdict": "no-match", "citation": None}}}
+        self.assertEqual(score.normalise(r)["stage"]["verdict"], "no-match")
+
+
 class CostTests(unittest.TestCase):
     def test_cost_is_in_rupees(self):
         usd = 1_000_000 * cost.INPUT_USD_PER_M / 1_000_000
@@ -56,6 +78,13 @@ class GuardTests(unittest.TestCase):
 
     def test_hits_deck_text(self):
         self.assertEqual(guard.anti_thesis(self.app(deck="A web3 gaming studio")), "gaming")
+
+    def test_negated_mention_is_not_a_hit(self):
+        self.assertIsNone(guard.anti_thesis(self.app(deck="We do not do gaming or crypto.")))
+        self.assertIsNone(guard.anti_thesis(self.app(deck="No web3 exposure.")))
+
+    def test_negation_does_not_hide_a_later_real_mention(self):
+        self.assertEqual(guard.anti_thesis(self.app(deck="Not crypto, but we run a gaming studio")), "gaming")
 
     def test_works_without_deck(self):
         self.assertIsNone(guard.anti_thesis({"sector": "b2b", "model": "saas"}))
@@ -93,7 +122,19 @@ class LoaderAndRunTests(unittest.TestCase):
         self.assertEqual(rows["A02"]["rec"], "INSUFFICIENT DATA TO RECOMMEND")
         self.assertIn("anti-thesis: nbfc", rows["A05"]["rec"])
         self.assertIn("anti-thesis: d2c", rows["A04"]["rec"])
-        self.assertGreater(rows["A06"]["cost_inr"], 1)     # rupees, not dollars
+        self.assertGreater(rows["A06"]["cost_inr"], 0.1)   # rupees: the USD figure rounds to 0.01
+
+    def test_log_rows_are_timestamped(self):
+        import json
+        self.run_quiet("data/applications.csv")
+        first = json.loads(Path("runs/run_log.jsonl").read_text().splitlines()[0])
+        self.assertIn("run_at", first)
+
+    def test_cost_within_ceiling_with_fixture_tokens(self):
+        import json
+        self.run_quiet("data/applications.csv")
+        for l in Path("runs/run_log.jsonl").read_text().splitlines():
+            self.assertLess(json.loads(l)["cost_inr"], config.COST_CEILING_INR)
 
     def test_v2_csv_runs(self):
         self.run_quiet("data/applications_v2.csv")

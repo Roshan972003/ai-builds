@@ -17,6 +17,6 @@ def assess(app_id, prompt):
                 "response_mime_type": "application/json"})
     reply = json.loads(resp.text)
     usage = resp.usage_metadata
-    reply["tokens_in"] = usage.prompt_token_count
-    reply["tokens_out"] = usage.candidates_token_count
+    reply["tokens_in"] = usage.prompt_token_count or 0
+    reply["tokens_out"] = usage.candidates_token_count or 0
     return reply

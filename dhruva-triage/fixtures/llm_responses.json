@@ -26,8 +26,8 @@
     "citation": "form: round_size_cr=80"
    }
   },
-  "tokens_in": 152000,
-  "tokens_out": 9800
+  "tokens_in": 700,
+  "tokens_out": 420
  },
  "A02": {
   "criteria": {
@@ -37,8 +37,8 @@
     "why": "form blank; deck does not say"
    },
    "sector": {
-    "verdict": "partial",
-    "citation": "deck: 'secure collaboration', no process or customer named"
+    "verdict": "insufficient-data",
+    "citation": null
    },
    "geography": {
     "verdict": "insufficient-data",
@@ -61,8 +61,8 @@
     "why": "form blank"
    }
   },
-  "tokens_in": 148000,
-  "tokens_out": 9500
+  "tokens_in": 740,
+  "tokens_out": 435
  },
  "A03": {
   "criteria": {
@@ -92,8 +92,8 @@
     "why": "form blank; deck silent on round size"
    }
   },
-  "tokens_in": 155000,
-  "tokens_out": 10200
+  "tokens_in": 780,
+  "tokens_out": 450
  },
  "A04": {
   "criteria": {
@@ -122,8 +122,8 @@
     "citation": "form: round_size_cr=4"
    }
   },
-  "tokens_in": 146000,
-  "tokens_out": 9300
+  "tokens_in": 820,
+  "tokens_out": 465
  },
  "A05": {
   "criteria": {
@@ -152,8 +152,8 @@
     "citation": "form: round_size_cr=9"
    }
   },
-  "tokens_in": 150000,
-  "tokens_out": 9900
+  "tokens_in": 860,
+  "tokens_out": 480
  },
  "A06": {
   "criteria": {
@@ -182,7 +182,7 @@
     "citation": "form: round_size_cr=6"
    }
   },
-  "tokens_in": 158000,
-  "tokens_out": 10400
+  "tokens_in": 900,
+  "tokens_out": 495
  }
 }

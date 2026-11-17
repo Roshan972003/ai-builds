@@ -1,5 +1,6 @@
 import argparse
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 
 import config
@@ -25,13 +26,13 @@ def run(path):
     rows = []
     for app in apps:
         reply = llm.assess(app["id"], build_prompt(app))
-        verdicts = reply["criteria"]
+        verdicts = score.normalise(reply)
         raw = score.raw_score(verdicts)
         fit = round(raw / len(config.CRITERIA) * 10, 1)
         gaps = score.missing(verdicts)
         term = guard.anti_thesis(app)
         rec = score.recommend(fit, len(gaps), term)
-        inr = cost.cost_inr(reply["tokens_in"], reply["tokens_out"])
+        inr = cost.cost_inr(reply.get("tokens_in", 0), reply.get("tokens_out", 0))
         rows.append({"id": app["id"], "name": app["name"], "fit": fit, "rec": rec,
                      "could_not_establish": gaps, "cost_inr": round(inr, 2)})
         Path("reports").mkdir(exist_ok=True)
@@ -44,8 +45,9 @@ def run(path):
           f"projected quarter ({config.QUARTERLY_VOLUME} apps): Rs {avg * config.QUARTERLY_VOLUME:,.0f}")
     Path("runs").mkdir(exist_ok=True)
     with open("runs/run_log.jsonl", "a") as f:
+        stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
         for r in rows:
-            f.write(json.dumps(r) + "\n")
+            f.write(json.dumps({"run_at": stamp, **r}) + "\n")
 
 
 if __name__ == "__main__":
